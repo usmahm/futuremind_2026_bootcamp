@@ -29,93 +29,153 @@ The Arduino sends control signals, but the L298N and motor battery provide the m
 | Argument     | Information placed inside a function’s parentheses.                                         |
 | Calibration  | Measuring and adjusting for the real robot and environment.                                 |
 
-## Safety checkpoint — wheels raised
+### Understanding the Code
 
-Do not place the robot on the floor yet.
+Your project contains two tabs: the instructor helper file and your student challenge sketch.
 
-1. Put the chassis on a stable block so all four drive wheels can spin freely.
-2. Open `Day02_Student.ino`; do not edit `RobotHelpers.ino`.
-3. Ask the instructor to approve the test area.
-4. Uncomment only the Checkpoint 1 commands.
-5. Upload and identify the direction of both wheels on each side.
-6. If “forward” is physically backward—or two motors on one side fight each other—stop and tell the instructor.
+#### 1. The Helper Functions (Under the Hood)
 
-## Checkpoint 1 — Test movement
+The instructor tab translates high-level commands into pin signals for the L298N motor driver:
 
-Try one function at a time:
+* `robotBegin()`: Configures digital pins 5, 6, 7, 8, 11, and 12 as outputs to control motor power and direction.
 
+
+* `moveForward(speed)` and `moveBackward(speed)`: Commands both the left and right motor pairs to spin in the same direction at a speed between `0` (stopped) and `255` (full speed).
+
+
+* `turnLeft(speed)` and `turnRight(speed)`: Drives one side forward and the opposite side backward to pivot the chassis on the spot (skid-steering).
+
+
+* `stopRobot()`: Shuts off motor power immediately by setting PWM pins and directional inputs to zero.
+
+
+
+#### 2. The Student Sketch Structure
+
+* **`setup()`**: Executes once when the Arduino boots up or resets. Your entire driving sequence lives here so the square is completed once and does not repeat infinitely.
+
+
+* **`loop()`**: Executes repeatedly forever. It contains only `stopRobot()` to ensure the car stays safely parked after finishing its route.
+
+
+* **Timing & Calibration Constants**:
+
+| Constant | Default Value | Role |
+| --- | --- | --- |
+| `DRIVE_SPEED` | `140` | Straight-line motor power ($0$ to $255$). |
+| `TURN_SPEED` | `130` | Pivot motor power ($0$ to $255$). |
+| `STRAIGHT_TIME_MS` | `1200` | Duration to travel one full side length ($1000\text{ ms} = 1\text{ second}$). |
+| `LEFT_90_TIME_MS` | `600` | Duration to complete a precise $90^\circ$ left pivot turn. |
+| `PAUSE_BETWEEN_MOVES_MS` | `300` | Settling delay to kill physical inertia before the next movement. |
+
+---
+
+### Step-by-Step Lab Procedure
+
+#### Step 1: Bench Safety Check ("Wheels-Up")
+
+Never place an unverified robot directly on the floor.
+
+1. Prop your robot car on a stand or block so all four wheels spin freely in the air.
+2. In `setup()`, find **CHECKPOINT 1** and remove the `//` comment markers:
 ```cpp
 moveForward(DRIVE_SPEED);
 delay(700);
 stopRobot();
+
 ```
 
-Repeat safely for `moveBackward`, `turnLeft`, and `turnRight`. A movement call continues until `stopRobot()` or another movement command.
 
-What does the value inside the parentheses control? **********\_\_\_**********
+3. Upload the sketch. After a 2-second safety delay, all four wheels must rotate forward for 0.7 seconds and stop. If any wheel spins backward, alert your instructor to correct the motor wiring.
 
-## Checkpoint 2 — Straight-line calibration
 
-After instructor approval, place the robot at the floor start line.
+4. Add `//` back to the Checkpoint 1 lines before moving forward.
 
-1. The goal is to measure the speed and time the car needs to move at to reach the marked distance from the start position.
-2. You may need to perform multiple trials to get this right. Record your results after each trial.
-3. Begin with `DRIVE_SPEED = 140` and `STRAIGHT_TIME_MS = 1200`.
-4. Measure the distance covered and record.
-5. Edit one of `DRIVE_SPEED` or `STRAIGHT_TIME_MS` and repeat the process till you get to the marked distance.
-6. You should only change one of `DRIVE_SPEED` or `STRAIGHT_TIME_MS` per reading.
+#### Step 2: Calibrate the Straight Side
 
-| Trial | Time (ms) | Speed | Distance reached | What will we change? |
-| ----- | --------: | ----: | ---------------- | -------------------- |
-| 1     |       700 |       |                  |                      |
-| 2     |       700 |       |                  |                      |
-| 3     |       700 |       |                  |                      |
+1. Place a piece of masking tape on the floor as your starting line and another at your target distance (such as 1 meter).
+2. Test one straight drive in your challenge area:
+```cpp
+moveForward(DRIVE_SPEED);
+delay(STRAIGHT_TIME_MS);
+stopRobot();
 
-At what speed covered does the car cover the requered distance?: ****\_\_****
+```
 
-## Checkpoint 3 — Turn calibration
 
-Use the taped 90° guide. Left and right times may differ.
+3. Run the car on the floor:
+* **Stops before the mark:** Increase `STRAIGHT_TIME_MS` (e.g., from `1200` to `1400`).
+* **Drives past the mark:** Decrease `STRAIGHT_TIME_MS` (e.g., from `1200` to `1000`).
 
-1. The goal is to measure the speed and time the car needs to make a left or right turn.
-2. You may need to perform multiple trials to get this right. Record your results after each trial.
-3. You should start with left turn, and only do for right turn after getting it right.
-4. Begin with `DRIVE_SPEED = 140` and `STRAIGHT_TIME_MS = 1200`.
-5. Measure the distance covered and record.
-6. Edit one of `DRIVE_SPEED` or `STRAIGHT_TIME_MS` and repeat the process till you get to the marked distance.
-7. You should only change one of `DRIVE_SPEED` or `STRAIGHT_TIME_MS` per reading.
 
-| Trial | Direction | Speed | Time (ms) | Too little / correct / too far |
-| ----- | --------- | ----: | --------: | ------------------------------ |
-| 1     | Left      |       |           |                                |
-| 2     | Left      |       |           |                                |
-| 3     | Right     |       |           |                                |
-| 4     | Right     |       |           |                                |
+4. Repeat until the front bumper stops consistently at your target tape line.
 
-Chosen left 90° time: ****\_\_**** ms  
-Chosen right 90° time: ****\_\_**** ms
+#### Step 3: Calibrate the $90^\circ$ Pivot
 
-## Team challenge — Drive a square
+1. Align the car's wheels along a floor tile seam or a taped cross on the floor.
+2. Run a single turn command:
+```cpp
+turnLeft(TURN_SPEED);
+delay(LEFT_90_TIME_MS);
+stopRobot();
 
-Edit the calibration constants and the **STUDENT CHALLENGE AREA** in the main tab.
+```
 
-1. Choose either left or right turns.
-2. Add a straight movement and a 90° turn.
-3. Stop after each movement before the short pause.
-4. Repeat the pair four times.
-5. Upload with wheels raised, then request permission for a floor run.
-6. Change only one calibration value between trials.
 
-Success means the robot completes four sides, stays in the test area, and ends within approximately one car length of its starting point.
+3. Inspect the car’s final heading against the perpendicular line:
+* **Under-turning ($< 90^\circ$):** The car did not turn enough. Increase `LEFT_90_TIME_MS` by 30–50 ms.
+* **Over-turning ($> 90^\circ$):** The car turned too far. Decrease `LEFT_90_TIME_MS` by 30–50 ms.
 
-## Stretch challenge
 
-Create a figure-eight-style route from movement commands. Accuracy matters more than speed. Explain why the route changes as the battery loses charge.
 
-## Exit questions
+---
 
-1. Why do we need a motor driver? ********************\_********************
-2. What does `moveForward(140);` do? ******************\_\_******************
-3. Why must it be followed later by `stopRobot()`? ************\_************
-4. Why might two cars need different turn times? ************\_\_************
-5. Would a timed turn always equal exactly 90°? Why? **********\_\_\_**********
+### Step 4: Assemble the Full Square
+
+Once your straight distance and turn timing are calibrated, you have two ways to program the full square.
+
+**Option A: Sequential Blocks (Junior Level)**
+
+Copy and paste the side-and-turn block 4 times inside the `STUDENT CHALLENGE AREA`:
+
+```cpp
+// Side 1
+moveForward(DRIVE_SPEED);
+delay(STRAIGHT_TIME_MS);
+stopRobot();
+delay(PAUSE_BETWEEN_MOVES_MS);
+turnLeft(TURN_SPEED);
+delay(LEFT_90_TIME_MS);
+stopRobot();
+delay(PAUSE_BETWEEN_MOVES_MS);
+
+// Repeat Side 2, Side 3, and Side 4 below...
+
+```
+
+**Option B: The Loop Pattern (Senior Level)**
+
+Instead of repeating code manually, use a `for` loop to repeat the pattern 4 times cleanly:
+
+```cpp
+for (int side = 0; side < 4; side++) {
+  moveForward(DRIVE_SPEED);
+  delay(STRAIGHT_TIME_MS);
+  stopRobot();
+  delay(PAUSE_BETWEEN_MOVES_MS);
+
+  turnLeft(TURN_SPEED);
+  delay(LEFT_90_TIME_MS);
+  stopRobot();
+  delay(PAUSE_BETWEEN_MOVES_MS);
+}
+
+```
+
+---
+
+### Engineering Tips & Pitfalls
+
+* **Battery Fade:** DC motors spin slower as battery packs drain. If your robot turned perfectly 15 minutes ago but is now under-turning, recharge or swap your batteries rather than drastically changing your code.
+* **Floor Friction:** If you calibrate on smooth tile and then test on rough carpet, the tires will grip differently and your turns will under-rotate. Always calibrate on the test surface.
+* **Veering to One Side:** Cheap DC hobby motors rarely rotate at the exact same RPM. If your car curves slightly during straight drives, you can adjust the helper tab to send a slightly higher PWM speed to the slower motor side.
